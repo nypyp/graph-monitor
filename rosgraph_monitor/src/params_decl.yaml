@@ -25,6 +25,18 @@ rosgraph_monitor:
         type: string_array
         description: If node FQN starts with any of these prefixes, downgrade ERROR to WARN when missing
         default_value: []
+    services:
+      ignore_suffixes:
+        type: string_array
+        description: If services end with any of these suffixes, ignore them
+        default_value:
+          - /describe_parameters
+          - /get_parameter_types
+          - /get_parameters
+          - /list_parameters
+          - /set_parameters
+          - /set_parameters_atomically
+          - /get_type_description
     continuity:
       enable:
         type: bool

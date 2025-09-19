@@ -81,6 +81,18 @@ struct GraphMonitorConfiguration
     std::vector<std::string> warn_only_prefixes;
   } nodes;
 
+  struct ServiceChecks
+  {
+    // Matching services will not be considered in any graph analysis
+    std::vector<std::string> ignore_suffixes;
+  } services;
+
+  struct ClientChecks
+  {
+    // Matching clients will not be considered in any graph analysis
+    std::vector<std::string> ignore_suffixes;
+  } clients;
+
   struct ContinuityChecks
   {
     // If set, don't perform any continuity checks
@@ -207,10 +219,42 @@ protected:
       const rclcpp::Time & now);
   };
 
+  /// @brief Keep the flags to services tracking
+  struct ServiceTracking
+  {
+    bool missing = false;
+    bool stale = true;
+    std::string service_name;
+    std::string service_type;
+    std::string node_name;
+
+    explicit ServiceTracking(
+      std::string service_name,
+      std::string service_type,
+      std::string node_name);
+  };
+
+  /// @brief Keep the flags to actions tracking
+  struct ActionTracking
+  {
+    bool missing = false;
+    bool stale = true;
+    std::string action_name;
+    std::string node_name;
+
+    explicit ActionTracking(
+      std::string action_name,
+      std::string node_name);
+  };
+
   typedef std::map<std::string, std::vector<std::string>> TopicsToTypes;
   typedef std::unordered_map<RosRmwGid, EndpointTracking> EndpointTrackingMap;
   typedef std::unordered_set<RosRmwGid> EndpointSet;
   typedef std::pair<std::string, std::string> NodeAndTopic;
+
+  typedef std::unordered_map<std::string, ServiceTracking> ServiceTrackingMap;
+  typedef std::unordered_map<std::string, std::vector<ServiceTracking>> ClientTrackingMap;
+  typedef std::unordered_map<std::string, ActionTracking> ActionTrackingMap;
 
   /* Methods */
 
@@ -225,6 +269,11 @@ protected:
   /// @return Whether to ignore tracking the node
   bool ignore_node(const std::string & node_name);
 
+  /// @brief Should we ignore this service?
+  /// @param service_name
+  /// @return Whether we should ignore this service
+  bool ignore_service(const std::string & service_name);
+
   /// @brief Check current observed state against our tracked state, updating tracking info
   /// @param observed_node_names
   void track_node_updates(
@@ -233,6 +282,15 @@ protected:
   /// @brief Check current observed state against our tracked state, updating tracking info
   /// @param observed_topics_and_types
   void track_endpoint_updates(const TopicsToTypes & observed_topics_and_types);
+
+  /// @brief track the service
+  /// @param node_names_and_services
+  void track_service_update(
+    std::vector<std::pair<std::string, std::string>> node_names_and_services);
+
+  /// @brief track the action from a service
+  /// @param service_name
+  bool track_action_update(const std::string & service_name, const std::string & node_name);
 
   /// @return Iterator to existing or added publisher, or nullopt if node ignored
   std::optional<EndpointTrackingMap::iterator> add_publisher(
@@ -285,12 +343,20 @@ protected:
   std::unordered_map<std::string, NodeTracking> nodes_;
   EndpointTrackingMap publishers_;
   EndpointTrackingMap subscriptions_;
+
   std::unordered_map<NodeAndTopic, RosRmwGid> publisher_lookup_;
   std::unordered_map<NodeAndTopic, RosRmwGid> subscription_lookup_;
+
+  ServiceTrackingMap services_;
+  ClientTrackingMap clients_;
+  ActionTrackingMap action_servers_;
+  ActionTrackingMap action_clients_;
 
   // Tracking outputs
   std::unordered_set<std::string> ignored_nodes_;
   std::unordered_set<std::string> returned_nodes_;
+  std::unordered_set<std::string> ignored_services_;
+  std::unordered_set<std::string> ignored_clients_;
   std::unordered_map<std::string, TopicTracking> topic_endpoint_counts_;
   std::unordered_set<std::string> pubs_with_no_subs_;  // a.k.a. "leaf topics"
   std::unordered_set<std::string> subs_with_no_pubs_;  // a.k.a. "dead sinks"

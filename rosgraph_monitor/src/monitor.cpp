@@ -66,6 +66,20 @@ bool match_any_prefixes(const std::vector<std::string> & prefixes, const std::st
   return false;
 }
 
+bool match_any_suffix(const std::vector<std::string> & suffixs, const std::string & value)
+{
+  for (auto & suffix : suffixs) {
+    if (value.size() > suffix.size() &&
+        value.compare(
+          value.size() - suffix.size(),
+          value.size(),
+          suffix) == 0) {
+        return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace
 
 
@@ -161,6 +175,22 @@ rosgraph_monitor_msgs::msg::Topic RosGraphMonitor::EndpointTracking::to_msg()
   return topic_msg;
 }
 
+RosGraphMonitor::ServiceTracking::ServiceTracking(
+  std::string name,
+  std::string type,
+  std::string nodename
+)
+: service_name(std::move(name)),
+  service_type(std::move(type)),
+  node_name(std::move(nodename)) {}
+
+RosGraphMonitor::ActionTracking::ActionTracking(
+  std::string name,
+  std::string nodename
+)
+: action_name(std::move(name)),
+  node_name(std::move(nodename)) {}
+
 RosGraphMonitor::RosGraphMonitor(
   rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph,
   std::function<rclcpp::Time()> now_fn,
@@ -199,6 +229,9 @@ void RosGraphMonitor::update_graph()
 
   const auto topics_and_types = node_graph_->get_topic_names_and_types();
   track_endpoint_updates(topics_and_types);
+
+  auto node_names_and_namespaces = node_graph_->get_node_names_and_namespaces();
+  track_service_update(node_names_and_namespaces);
 }
 
 bool RosGraphMonitor::ignore_node(const std::string & node_name)
@@ -210,6 +243,18 @@ bool RosGraphMonitor::ignore_node(const std::string & node_name)
     auto [it, inserted] = ignored_nodes_.insert(node_name);
     if (inserted) {
       RCLCPP_DEBUG(logger_, "Ignoring new node: %s", node_name.c_str());
+    }
+    return true;
+  }
+  return false;
+}
+
+bool RosGraphMonitor::ignore_service(const std::string & service_name)
+{
+  if (match_any_suffix(config_.services.ignore_suffixes, service_name)) {
+    auto [it, inserted] = ignored_services_.emplace(service_name);
+    if (inserted) {
+      RCLCPP_DEBUG(logger_, "Ignoring service: %s", service_name.c_str());
     }
     return true;
   }
@@ -425,6 +470,112 @@ void RosGraphMonitor::track_endpoint_updates(const TopicsToTypes & observed_topi
       } else {
         it++;
       }
+    }
+  }
+}
+
+bool RosGraphMonitor::track_action_update(const std::string & service_name, const std::string & node_name) {
+  size_t action_pos = service_name.find("/_action");
+  if (action_pos != std::string::npos) {
+    ActionTracking tracking{
+      service_name.substr(0, action_pos),
+      node_name
+    };
+    tracking.stale = false;
+
+    auto [it, inserted] = action_servers_.emplace(tracking.action_name, tracking);
+    if (inserted) {
+      RCLCPP_DEBUG(logger_, "New action: %s", tracking.action_name.c_str());
+    } else {
+      auto & tracking = it->second;
+      tracking.stale = false;
+      RCLCPP_DEBUG(
+        logger_,
+        "Observed action: %s",
+        tracking.action_name.c_str()
+      );
+      if (tracking.missing == true) {
+        RCLCPP_INFO(logger_, "Action %s is back", tracking.action_name.c_str());
+        tracking.missing = false;
+      }
+    }
+    return true;
+  }
+  return false;
+}
+
+void RosGraphMonitor::track_service_update(
+  std::vector<std::pair<std::string, std::string>> node_names_and_namespaces
+)
+{
+  // Mark all stale as base state
+  for (auto & [service, service_tracking] : services_) {
+    service_tracking.stale = true;
+  }
+  // Mark all action stale as base state
+  for (auto & [action, action_tracking] : action_servers_) {
+    action_tracking.stale = true;
+  }
+
+  // Look in the current services of node
+  for (auto & [node_name, name_space] : node_names_and_namespaces) {
+    auto services_and_types = node_graph_->get_service_names_and_types_by_node(node_name, name_space);
+    // Track services
+    for (auto & [service, types] : services_and_types) {
+      auto node_name_with_namespace = name_space == "/" ?
+        name_space + node_name :
+        name_space + "/" + node_name;
+
+      // Ignore services
+      if (ignore_service(service)) {
+        continue;
+      }
+      // Track actions from services
+      if (track_action_update(service, node_name_with_namespace)) {
+        continue;
+      }
+
+      ServiceTracking tracking{service, types[0], node_name_with_namespace};
+      tracking.stale = false;
+      auto [it, inserted] = services_.emplace(
+        service, tracking);
+
+      if (inserted) {
+          RCLCPP_DEBUG(logger_, "New service: %s", service.c_str());
+      } else {
+        auto & tracking = it->second;
+        tracking.stale = false;
+        RCLCPP_DEBUG(
+          logger_,
+          "Observed service: %s",
+          service.c_str()
+        );
+        if (tracking.missing == true) {
+            RCLCPP_INFO(logger_, "Service came back: %s", service.c_str());
+            tracking.missing = false;
+        }
+        if (tracking.node_name != node_name_with_namespace) {
+          RCLCPP_WARN(
+            logger_,
+            "Service [%s] advised to node [%s] now",
+            service.c_str(),
+            node_name_with_namespace.c_str());
+        }
+      }
+    }
+  }
+  // Check which service are still stale - they weren't observed
+  for (auto & [service, tracking] : services_) {
+    if (tracking.stale) {
+      RCLCPP_WARN(logger_, "Service is missing: %s", service.c_str());
+      tracking.missing = true;
+    }
+  }
+  // Check which action are still stale - they weren't observed
+  for (auto & [action, tracking] : action_servers_) {
+    if (tracking.stale) {
+      RCLCPP_WARN(logger_, "Action is missing: %s", action.c_str());
+      tracking.missing = true;
     }
   }
 }
@@ -697,6 +848,26 @@ void RosGraphMonitor::fill_rosgraph_msg(rosgraph_monitor_msgs::msg::Graph & msg)
         node_msg.subscriptions.push_back(topic_msg);
       }
     }
+
+  // Add services to nodes
+  for (const auto & [service, tracking] : services_) {
+    if (tracking.node_name == node_name) {
+      rosgraph_monitor_msgs::msg::Service service_msg;
+      service_msg.name = tracking.service_name;
+      service_msg.type = tracking.service_type;
+      node_msg.services.push_back(service_msg);
+    }
+  }
+
+  // Add action servers to nodes
+  for (const auto & [action, tracking] : action_servers_) {
+    if (tracking.node_name == node_name) {
+      rosgraph_monitor_msgs::msg::Action action_msg;
+      action_msg.name = tracking.action_name;
+      node_msg.action_servers.push_back(action_msg);
+    }
+  }
+
     msg.nodes.push_back(node_msg);
   }
 }

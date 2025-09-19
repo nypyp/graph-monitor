@@ -48,6 +48,7 @@ GraphMonitorConfiguration Node::create_graph_monitor_config(
   GraphMonitorConfiguration gconf;
   gconf.diagnostic_namespace = gparms.diagnostic_namespace;
   gconf.nodes.ignore_prefixes = gparms.nodes.ignore_prefixes;
+  gconf.services.ignore_suffixes = gparms.services.ignore_suffixes;
   gconf.nodes.warn_only_prefixes = gparms.nodes.warn_only_prefixes;
   gconf.continuity.enable = gparms.continuity.enable;
   gconf.continuity.ignore_subscriber_nodes = vec_to_set(gparms.continuity.ignore_subscriber_nodes);
@@ -101,11 +102,11 @@ Node::Node(const rclcpp::NodeOptions & options)
   graph_monitor_.set_graph_change_callback(
     [this](rosgraph_monitor_msgs::msg::Graph & graph_msg) {
       // Update cumulative graph with the new graph information
-      cumulative_graph_.update_from_graph_msg(graph_msg);
+      // cumulative_graph_.update_from_graph_msg(graph_msg);
 
       // Publish both regular and cumulative graph messages
       publish_rosgraph(graph_msg);
-      publish_cumulative_graph();
+      // publish_cumulative_graph();
     });
 }
 

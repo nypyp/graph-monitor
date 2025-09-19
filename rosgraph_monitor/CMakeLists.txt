@@ -12,68 +12,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(rosgraph_monitor)
 
-# Default to C++17
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror=switch)
+  add_link_options("-Wl,--no-undefined")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(generate_parameter_library REQUIRED)
+
 find_package(diagnostic_msgs REQUIRED)
 find_package(diagnostic_updater REQUIRED)
-find_package(generate_parameter_library REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rosgraph_monitor_msgs REQUIRED)
-find_package(rmw_implementation_cmake REQUIRED)
-
-# Handle preprocessor definitions for RMW implementation
-set(RMW_IMPLEMENTATION_ENV_VAR $ENV{RMW_IMPLEMENTATION})
-if(RMW_IMPLEMENTATION_ENV_VAR)
-  set(RMW_IMPLEMENTATION ${RMW_IMPLEMENTATION_ENV_VAR})
-endif()
-if(NOT RMW_IMPLEMENTATION)
-  set(RMW_IMPLEMENTATION "rmw_fastrtps_cpp")
-endif()
-message(STATUS "Using RMW implementation: ${RMW_IMPLEMENTATION}")
-
-find_package(${RMW_IMPLEMENTATION} REQUIRED)
 
 if("$ENV{ROS_DISTRO}" STREQUAL "humble")
   add_compile_definitions("ROS2_HUMBLE")
 endif()
 
-generate_parameter_library(rosgraph_monitor_generated_parameters
-  src/params_decl.yaml
-)
-
-# Library definition
+# Library
 add_library(${PROJECT_NAME} SHARED
   src/event.cpp
   src/monitor.cpp
   src/cumulative_graph.cpp
-  src/node.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(${PROJECT_NAME} PUBLIC
+  diagnostic_updater::diagnostic_updater
+  rclcpp::rclcpp
+  ${diagnostic_msgs_TARGETS}
+  ${rosgraph_monitor_msgs_TARGETS}
 )
-target_link_libraries(${PROJECT_NAME}
-  rosgraph_monitor_generated_parameters
-)
-ament_target_dependencies(${PROJECT_NAME}
-  diagnostic_msgs
-  diagnostic_updater
-  rclcpp
-  rclcpp_components
-  rosgraph_monitor_msgs
-  ${RMW_IMPLEMENTATION}
+
+generate_parameter_library(${PROJECT_NAME}_generated_parameters
+  src/params_decl.yaml
 )
 
 # Node

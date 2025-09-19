@@ -34,6 +34,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   msg/Graph.msg
   msg/QosProfile.msg
   msg/Topic.msg
+  msg/Service.msg
+  msg/Action.msg
   msg/TopicStatistic.msg
   msg/TopicStatistics.msg
   DEPENDENCIES

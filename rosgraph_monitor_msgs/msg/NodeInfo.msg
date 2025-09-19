@@ -4,6 +4,10 @@ string name
 Topic[] publishers
 Topic[] subscriptions
 
+Service[] services
+
+Action[] action_servers
+
 # Observed parameter descriptions and current values for this node
 # parameter_values[] must be the same size as parameters[], or empty
 # Empty on either array means no values have yet been successfully queried
