@@ -253,7 +253,7 @@ protected:
   typedef std::pair<std::string, std::string> NodeAndTopic;
 
   typedef std::unordered_map<std::string, ServiceTracking> ServiceTrackingMap;
-  typedef std::unordered_map<std::string, std::vector<ServiceTracking>> ClientTrackingMap;
+  typedef std::unordered_map<std::pair<std::string, std::string>, ServiceTracking> ClientTrackingMap;
   typedef std::unordered_map<std::string, ActionTracking> ActionTrackingMap;
 
   /* Methods */
@@ -274,6 +274,11 @@ protected:
   /// @return Whether we should ignore this service
   bool ignore_service(const std::string & service_name);
 
+  /// @brief Should we ignore this client?
+  /// @param service_name
+  /// @return Whether we should ignore this client
+  bool ignore_client(const std::string & service_name);
+
   /// @brief Check current observed state against our tracked state, updating tracking info
   /// @param observed_node_names
   void track_node_updates(
@@ -287,6 +292,16 @@ protected:
   /// @param node_names_and_services
   void track_service_update(
     std::vector<std::pair<std::string, std::string>> node_names_and_services);
+
+  /// @brief track the client
+  /// @param node_names_and_services
+  void track_client_update(
+    std::vector<std::pair<std::string, std::string>> node_names_and_services);
+
+  /// @brief track the action from a client
+  /// @param service_name
+  /// @param node_name
+  bool track_action_client_update(const std::string & service_name, const std::string & node_name);
 
   /// @brief track the action from a service
   /// @param service_name

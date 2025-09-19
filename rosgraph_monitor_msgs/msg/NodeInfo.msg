@@ -5,8 +5,10 @@ Topic[] publishers
 Topic[] subscriptions
 
 Service[] services
+Service[] clients
 
 Action[] action_servers
+Action[] action_clients
 
 # Observed parameter descriptions and current values for this node
 # parameter_values[] must be the same size as parameters[], or empty
