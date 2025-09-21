@@ -86,10 +86,6 @@ Node::Node(const rclcpp::NodeOptions & options)
     create_publisher<rosgraph_monitor_msgs::msg::Graph>(
       "/rosgraph",
       rclcpp::QoS(1).transient_local().reliable())),
-  pub_cumulative_graph_(
-    create_publisher<rosgraph_monitor_msgs::msg::Graph>(
-      "/rosgraph_cumulative",
-      rclcpp::QoS(1).transient_local().reliable())),
 
   timer_publish_report_(
     create_wall_timer(
@@ -101,12 +97,8 @@ Node::Node(const rclcpp::NodeOptions & options)
   // Set up callback to publish rosgraph when nodes change
   graph_monitor_.set_graph_change_callback(
     [this](rosgraph_monitor_msgs::msg::Graph & graph_msg) {
-      // Update cumulative graph with the new graph information
-      // cumulative_graph_.update_from_graph_msg(graph_msg);
-
-      // Publish both regular and cumulative graph messages
+      // Publish regular graph message
       publish_rosgraph(graph_msg);
-      // publish_cumulative_graph();
     });
 }
 
@@ -183,13 +175,6 @@ void Node::publish_rosgraph(rosgraph_monitor_msgs::msg::Graph rosgraph_msg)
   pub_rosgraph_->publish(std::move(rosgraph_msg));
 }
 
-void Node::publish_cumulative_graph()
-{
-  auto msg = std::make_unique<rosgraph_monitor_msgs::msg::Graph>();
-  cumulative_graph_.fill_rosgraph_msg(*msg);
-  msg->timestamp = get_clock()->now();
-  pub_cumulative_graph_->publish(std::move(msg));
-}
 
 }  // namespace rosgraph_monitor
 

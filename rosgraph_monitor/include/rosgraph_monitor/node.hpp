@@ -27,7 +27,6 @@
 
 #include "rosgraph_monitor/rosgraph_monitor_generated_parameters.hpp"
 #include "rosgraph_monitor/monitor.hpp"
-#include "rosgraph_monitor/cumulative_graph.hpp"
 
 namespace rosgraph_monitor
 {
@@ -48,7 +47,6 @@ protected:
   void on_topic_statistics(const rosgraph_monitor_msgs::msg::TopicStatistics::SharedPtr msg);
   void publish_diagnostics();
   void publish_rosgraph(rosgraph_monitor_msgs::msg::Graph rosgraph_msg);
-  void publish_cumulative_graph();
   std::shared_future<void> query_params(
     const std::string & node_name,
     std::function<void(const rcl_interfaces::msg::ListParametersResult &)> callback);
@@ -57,13 +55,11 @@ protected:
   rosgraph_monitor::Params params_;
 
   RosGraphMonitor graph_monitor_;
-  CumulativeGraph cumulative_graph_;
 
   rclcpp::Subscription<rosgraph_monitor_msgs::msg::TopicStatistics>::SharedPtr
     sub_topic_statistics_;
   rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr pub_diagnostics_;
   rclcpp::Publisher<rosgraph_monitor_msgs::msg::Graph>::SharedPtr pub_rosgraph_;
-  rclcpp::Publisher<rosgraph_monitor_msgs::msg::Graph>::SharedPtr pub_cumulative_graph_;
   rclcpp::TimerBase::SharedPtr timer_publish_report_;
 };
 

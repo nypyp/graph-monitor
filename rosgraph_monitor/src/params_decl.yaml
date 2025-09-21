@@ -21,6 +21,7 @@ rosgraph_monitor:
           - /transform_listener_impl_  # ephemeral nodes created by TF
           - /rqt_
           - /rviz_
+          - /ComponentManager
       warn_only_prefixes:
         type: string_array
         description: If node FQN starts with any of these prefixes, downgrade ERROR to WARN when missing

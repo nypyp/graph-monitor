@@ -41,7 +41,7 @@ endif()
 add_library(${PROJECT_NAME} SHARED
   src/event.cpp
   src/monitor.cpp
-  src/cumulative_graph.cpp
+  src/cumulative_graph_node.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -49,6 +49,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 target_link_libraries(${PROJECT_NAME} PUBLIC
   diagnostic_updater::diagnostic_updater
   rclcpp::rclcpp
+  rclcpp_components::component
   ${diagnostic_msgs_TARGETS}
   ${rosgraph_monitor_msgs_TARGETS}
 )
@@ -75,6 +76,11 @@ target_link_libraries(${PROJECT_NAME}_nodelib PUBLIC
 rclcpp_components_register_node(${PROJECT_NAME}_nodelib
   PLUGIN "rosgraph_monitor::Node"
   EXECUTABLE ${PROJECT_NAME}_node
+)
+
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "rosgraph_monitor::CumulativeGraphNode"
+  EXECUTABLE ${PROJECT_NAME}_cumulative_node
 )
 
 install(
