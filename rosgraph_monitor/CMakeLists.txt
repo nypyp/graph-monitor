@@ -39,7 +39,7 @@ endif()
 add_library(${PROJECT_NAME} SHARED
   src/event.cpp
   src/monitor.cpp
-  src/cumulative_graph_node.cpp
+  src/cumulator.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -77,7 +77,7 @@ rclcpp_components_register_node(${PROJECT_NAME}_nodelib
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
-  PLUGIN "rosgraph_monitor::CumulativeGraphNode"
+  PLUGIN "rosgraph_monitor::GraphCumulator"
   EXECUTABLE ${PROJECT_NAME}_cumulative_node
 )
 

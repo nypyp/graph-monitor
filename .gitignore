@@ -1,2 +1,63 @@
-# Produced by launch_testing
-__pycache__
+```
+# Build artifacts
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.exe
+*.out
+
+# CMake build directories
+build/
+dist/
+target/
+
+# Dependencies
+venv/
+.venv/
+.env
+.env.local
+*.env.*
+
+# Logs
+*.log
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.Python
+*.so
+
+# C++
+*.i
+*.ii
+*.s
+*.ii
+*.s
+*.mod
+*.pb.cc
+*.pb.h
+
+# Temporary files
+*.tmp
+*~
+\#*\#
+```
