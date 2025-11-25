@@ -12,25 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ROSGRAPH_MONITOR__CUMULATOR_HPP_
-#define ROSGRAPH_MONITOR__CUMULATOR_HPP_
+#ifndef ROSGRAPH_CUMULATOR__CUMULATOR_HPP_
+#define ROSGRAPH_CUMULATOR__CUMULATOR_HPP_
 
-#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <functional>
 
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_components/register_node_macro.hpp"
 #include "rcl_interfaces/msg/parameter_descriptor.hpp"
-#include "rosgraph_monitor_msgs/msg/graph.hpp"
-#include "rosgraph_monitor_msgs/msg/topic.hpp"
-#include "rosgraph_monitor_msgs/msg/service.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "rosgraph_monitor_msgs/msg/action.hpp"
+#include "rosgraph_monitor_msgs/msg/graph.hpp"
 #include "rosgraph_monitor_msgs/msg/qos_profile.hpp"
+#include "rosgraph_monitor_msgs/msg/service.hpp"
+#include "rosgraph_monitor_msgs/msg/topic.hpp"
 
-namespace rosgraph_monitor
+namespace rosgraph_cumulator
 {
 
 /**
@@ -45,8 +42,7 @@ struct CumulativeTopicEndpoint
   /**
    * @brief Default constructor
    */
-  CumulativeTopicEndpoint()
-  : topic_name(""), topic_type(""), qos_profile() {}
+  CumulativeTopicEndpoint() : topic_name(""), topic_type(""), qos_profile() {}
 
   /**
    * @brief Constructor with parameters
@@ -55,10 +51,11 @@ struct CumulativeTopicEndpoint
    * @param qos QoS profile
    */
   CumulativeTopicEndpoint(
-    const std::string & name,
-    const std::string & type,
+    const std::string & name, const std::string & type,
     const rosgraph_monitor_msgs::msg::QosProfile & qos)
-  : topic_name(name), topic_type(type), qos_profile(qos) {}
+  : topic_name(name), topic_type(type), qos_profile(qos)
+  {
+  }
 
   /**
    * @brief Equality operator for comparison
@@ -80,8 +77,7 @@ struct CumulativeServiceEndpoint
   /**
    * @brief Default constructor
    */
-  CumulativeServiceEndpoint()
-  : service_name(""), service_type("") {}
+  CumulativeServiceEndpoint() : service_name(""), service_type("") {}
 
   /**
    * @brief Constructor with parameters
@@ -89,7 +85,9 @@ struct CumulativeServiceEndpoint
    * @param type Service type
    */
   CumulativeServiceEndpoint(const std::string & name, const std::string & type)
-  : service_name(name), service_type(type) {}
+  : service_name(name), service_type(type)
+  {
+  }
 
   /**
    * @brief Equality operator for comparison
@@ -110,15 +108,13 @@ struct CumulativeActionEndpoint
   /**
    * @brief Default constructor
    */
-  CumulativeActionEndpoint()
-  : action_name("") {}
+  CumulativeActionEndpoint() : action_name("") {}
 
   /**
    * @brief Constructor with parameters
    * @param name Action name
    */
-  explicit CumulativeActionEndpoint(const std::string & name)
-  : action_name(name) {}
+  explicit CumulativeActionEndpoint(const std::string & name) : action_name(name) {}
 
   /**
    * @brief Equality operator for comparison
@@ -156,7 +152,9 @@ struct CumulativeNodeInfo
     action_servers(),
     action_clients(),
     parameters(),
-    last_seen(0, 0, RCL_ROS_TIME) {}
+    last_seen(0, 0, RCL_ROS_TIME)
+  {
+  }
 
   /**
    * @brief Constructor with parameters
@@ -171,8 +169,7 @@ struct CumulativeNodeInfo
    * @param seen_time Time when node was last seen
    */
   CumulativeNodeInfo(
-    const std::string & node_name,
-    const std::vector<CumulativeTopicEndpoint> & pubs,
+    const std::string & node_name, const std::vector<CumulativeTopicEndpoint> & pubs,
     const std::vector<CumulativeTopicEndpoint> & subs,
     const std::vector<CumulativeServiceEndpoint> & srvs,
     const std::vector<CumulativeServiceEndpoint> & clnts,
@@ -188,7 +185,9 @@ struct CumulativeNodeInfo
     action_servers(act_srvs),
     action_clients(act_clnts),
     parameters(params),
-    last_seen(seen_time) {}
+    last_seen(seen_time)
+  {
+  }
 };
 
 /**
@@ -198,23 +197,16 @@ struct CumulativeNodeInfo
  * of the ROS graph, preserving information about all discovered nodes and their
  * communication endpoints (topics, services, actions) over time.
  */
-/**
- * @brief ROS 2 node that processes incoming graph messages and maintains cumulative graph information
- * 
- * This node subscribes to the graph messages and maintains a cumulative view
- * of the ROS graph, preserving information about all discovered nodes and 
- * their communication endpoints over time.
- */
-class GraphCumulator : public rclcpp::Node
+class GraphCumulator
 {
 public:
-  explicit GraphCumulator(const rclcpp::NodeOptions & options);
+  GraphCumulator();
 
   /**
    * @brief Process a new graph message and update cumulative state
    * @param graph_msg The incoming graph message to process
    */
-  void process_graph_message(const rosgraph_monitor_msgs::msg::Graph::SharedPtr graph_msg);
+  void process_graph_message(const rosgraph_monitor_msgs::msg::Graph & graph_msg);
 
   /**
    * @brief Generate a cumulative graph message with all discovered information
@@ -237,19 +229,13 @@ public:
    * @brief Get the timestamp of the most recently processed graph message
    * @return Timestamp of last update
    */
-  rclcpp::Time get_last_update_time() const;
-
-protected:
-  /**
-   * @brief Callback for incoming graph messages
-   * @param msg The incoming graph message to process
-   */
-  void on_graph_message(const rosgraph_monitor_msgs::msg::Graph::SharedPtr msg);
+  const rclcpp::Time & get_last_update_time() const;
 
   /**
-   * @brief Publish the current cumulative graph
+   * @brief Set the last update time
+   * @param time The timestamp to set
    */
-  void publish_cumulative_graph();
+  void set_last_update_time(const rclcpp::Time & time);
 
   /**
    * @brief Add a publisher to a node's history if it doesn't already exist
@@ -257,8 +243,7 @@ protected:
    * @param topic The topic information
    */
   void add_publisher_to_history(
-    const std::string & node_name,
-    const rosgraph_monitor_msgs::msg::Topic & topic);
+    const std::string & node_name, const rosgraph_monitor_msgs::msg::Topic & topic);
 
   /**
    * @brief Add a subscription to a node's history if it doesn't already exist
@@ -266,8 +251,7 @@ protected:
    * @param topic The topic information
    */
   void add_subscription_to_history(
-    const std::string & node_name,
-    const rosgraph_monitor_msgs::msg::Topic & topic);
+    const std::string & node_name, const rosgraph_monitor_msgs::msg::Topic & topic);
 
   /**
    * @brief Add a service to a node's history if it doesn't already exist
@@ -275,8 +259,7 @@ protected:
    * @param service The service information
    */
   void add_service_to_history(
-    const std::string & node_name,
-    const rosgraph_monitor_msgs::msg::Service & service);
+    const std::string & node_name, const rosgraph_monitor_msgs::msg::Service & service);
 
   /**
    * @brief Add a client to a node's history if it doesn't already exist
@@ -284,8 +267,7 @@ protected:
    * @param client The client information
    */
   void add_client_to_history(
-    const std::string & node_name,
-    const rosgraph_monitor_msgs::msg::Service & client);
+    const std::string & node_name, const rosgraph_monitor_msgs::msg::Service & client);
 
   /**
    * @brief Add an action server to a node's history if it doesn't already exist
@@ -293,8 +275,7 @@ protected:
    * @param action The action information
    */
   void add_action_server_to_history(
-    const std::string & node_name,
-    const rosgraph_monitor_msgs::msg::Action & action);
+    const std::string & node_name, const rosgraph_monitor_msgs::msg::Action & action);
 
   /**
    * @brief Add an action client to a node's history if it doesn't already exist
@@ -302,8 +283,7 @@ protected:
    * @param action The action information
    */
   void add_action_client_to_history(
-    const std::string & node_name,
-    const rosgraph_monitor_msgs::msg::Action & action);
+    const std::string & node_name, const rosgraph_monitor_msgs::msg::Action & action);
 
   /**
    * @brief Update parameters for a node
@@ -356,8 +336,7 @@ protected:
    * @param endpoint Endpoint to add or update
    */
   void upsert_topic_endpoint(
-    std::vector<CumulativeTopicEndpoint> & endpoints,
-    const CumulativeTopicEndpoint & endpoint);
+    std::vector<CumulativeTopicEndpoint> & endpoints, const CumulativeTopicEndpoint & endpoint);
 
   /**
    * @brief Add a service endpoint to the list if it doesn't exist
@@ -366,7 +345,7 @@ protected:
    */
   void add_unique_service_endpoint(
     std::vector<CumulativeServiceEndpoint> & endpoints,
-    const CumulativeServiceEndpoint & endpoint);
+    const CumulativeServiceEndpoint & endpoint) const;
 
   /**
    * @brief Add an action endpoint to the list if it doesn't exist
@@ -375,19 +354,15 @@ protected:
    */
   void add_unique_action_endpoint(
     std::vector<CumulativeActionEndpoint> & endpoints,
-    const CumulativeActionEndpoint & endpoint);
+    const CumulativeActionEndpoint & endpoint) const;
 
   // Map of node names to their cumulative information
   std::unordered_map<std::string, CumulativeNodeInfo> node_history_;
 
   // Timestamp of the most recent graph update
   rclcpp::Time last_update_time_;
-
-  // Subscriptions and publishers
-  rclcpp::Subscription<rosgraph_monitor_msgs::msg::Graph>::SharedPtr sub_graph_;
-  rclcpp::Publisher<rosgraph_monitor_msgs::msg::Graph>::SharedPtr pub_cumulative_graph_;
 };
 
-}  // namespace rosgraph_monitor
+}  // namespace rosgraph_cumulator
 
 #endif  // ROSGRAPH_MONITOR__CUMULATOR_HPP_

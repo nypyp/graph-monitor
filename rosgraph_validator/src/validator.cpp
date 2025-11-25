@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "rosgraph_monitor/validator.hpp"
+#include "rosgraph_validator/validator.hpp"
 
 #include <fmt/format.h>
 #include <yaml-cpp/yaml.h>
@@ -41,7 +41,7 @@ rosgraph_monitor_msgs::msg::QosProfile parse_qos(const YAML::Node & qos_node)
 }
 }  // namespace
 
-namespace rosgraph_monitor
+namespace rosgraph_validator
 {
 
 GraphValidator::GraphValidator(const rclcpp::NodeOptions & options)
@@ -262,7 +262,7 @@ NodeView GraphValidator::normalize_node(const rosgraph_monitor_msgs::msg::NodeIn
   return view;
 }
 
-}  //  namespace rosgraph_monitor
+}  // namespace rosgraph_validator
 
 #include <rclcpp_components/register_node_macro.hpp>
-RCLCPP_COMPONENTS_REGISTER_NODE(rosgraph_monitor::GraphValidator)
+RCLCPP_COMPONENTS_REGISTER_NODE(rosgraph_validator::GraphValidator)

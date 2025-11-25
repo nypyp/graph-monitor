@@ -24,7 +24,7 @@
 #include "rosgraph_monitor_msgs/msg/graph.hpp"
 #include "rosgraph_monitor_msgs/msg/node_info.hpp"
 
-namespace rosgraph_monitor
+namespace rosgraph_validator
 {
 enum class QosMatchStrategy
 {
@@ -88,6 +88,6 @@ private:
   rclcpp::Subscription<rosgraph_monitor_msgs::msg::Graph>::SharedPtr graph_sub_;
 };
 
-}  // namespace rosgraph_monitor
+}  // namespace rosgraph_validator
 
 #endif  //  ROSGRAPH_MONITOR__VALIDATOR_HPP_

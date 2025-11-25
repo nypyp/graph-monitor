@@ -13,7 +13,7 @@
 # the License.
 
 cmake_minimum_required(VERSION 3.8)
-project(rosgraph_monitor)
+project(rosgraph_cumulator)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -27,35 +27,16 @@ endif()
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
-if(NOT DEFINED ENV{ROS_DISTRO})
-  message(FATAL_ERROR "ROS_DISTRO environment variable not set")
-else()
-  string(TOUPPER "$ENV{ROS_DISTRO}" ROS_DISTRO)
-  message(STATUS "Detected ROS 2 distro ${ROS_DISTRO} from environment")
-  add_compile_definitions("ROS2_${ROS_DISTRO}")
-endif()
-
-# Library
-ament_auto_add_library(${PROJECT_NAME} SHARED src/event.cpp src/monitor.cpp)
-
-generate_parameter_library(${PROJECT_NAME}_generated_parameters
-                           src/params_decl.yaml)
-
-# Node
-ament_auto_add_library(${PROJECT_NAME}_nodelib SHARED src/node.cpp)
-target_link_libraries(${PROJECT_NAME}_nodelib
-                      ${PROJECT_NAME}_generated_parameters)
+ament_auto_add_library(${PROJECT_NAME}_nodelib SHARED src/cumulator.cpp
+                       src/node.cpp)
 
 rclcpp_components_register_node(
-  ${PROJECT_NAME}_nodelib PLUGIN "rosgraph_monitor::Node" EXECUTABLE
+  ${PROJECT_NAME}_nodelib PLUGIN "rosgraph_cumulator::Node" EXECUTABLE
   ${PROJECT_NAME}_node)
 
 if(BUILD_TESTING)
   ament_auto_find_test_dependencies()
   ament_lint_auto_find_test_dependencies()
-
-  ament_add_gmock(test_graph_monitor test/test_graph_monitor.cpp)
-  target_link_libraries(test_graph_monitor ${PROJECT_NAME})
 endif()
 
-ament_auto_package(INSTALL_TO_SHARE launch config USE_SCOPED_HEADER_INSTALL_DIR)
+ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)
