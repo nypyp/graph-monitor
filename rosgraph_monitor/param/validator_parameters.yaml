@@ -1,0 +1,13 @@
+validator_parameters:
+  config_file:
+    type: string
+    description: The path to the configuration file.
+    default_value: "validator.yaml"
+    validation:
+      not_empty<>: null
+  graph_sub:
+    type: string
+    description: The rosgraph monitor topic name
+    default_value: "/rosgraph"
+    validation:
+      not_empty<>: null

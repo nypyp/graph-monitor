@@ -17,25 +17,21 @@
 #include <algorithm>
 #include <memory>
 #include <string>
-#include <vector>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace rosgraph_monitor
 {
 
 GraphCumulator::GraphCumulator(const rclcpp::NodeOptions & options)
-: rclcpp::Node("rosgraph_cumulative", options), 
+: rclcpp::Node("rosgraph_cumulative", options),
   last_update_time_(0, 0, RCL_ROS_TIME),
-  sub_graph_(
-    create_subscription<rosgraph_monitor_msgs::msg::Graph>(
-      "/rosgraph",
-      rclcpp::QoS(10),
-      std::bind(&GraphCumulator::on_graph_message, this, std::placeholders::_1))),
-  pub_cumulative_graph_(
-    create_publisher<rosgraph_monitor_msgs::msg::Graph>(
-      "/rosgraph_cumulative",
-      rclcpp::QoS(1).transient_local().reliable()))
+  sub_graph_(create_subscription<rosgraph_monitor_msgs::msg::Graph>(
+    "/rosgraph", rclcpp::QoS(10),
+    std::bind(&GraphCumulator::on_graph_message, this, std::placeholders::_1))),
+  pub_cumulative_graph_(create_publisher<rosgraph_monitor_msgs::msg::Graph>(
+    "/rosgraph_cumulative", rclcpp::QoS(1).transient_local().reliable()))
 {
   RCLCPP_INFO(get_logger(), "GraphCumulator initialized");
 }
@@ -55,26 +51,21 @@ void GraphCumulator::publish_cumulative_graph()
 {
   // Generate the cumulative graph from the processor
   auto cumulative_graph = generate_cumulative_graph();
-  
+
   // Update the timestamp to current time
   cumulative_graph.timestamp = get_clock()->now();
 
   // Publish the cumulative graph message
   pub_cumulative_graph_->publish(std::move(cumulative_graph));
-  
-  RCLCPP_DEBUG(
-    get_logger(),
-    "Published cumulative graph with %zu nodes",
-    get_node_count());
+
+  RCLCPP_DEBUG(get_logger(), "Published cumulative graph with %zu nodes", get_node_count());
 }
 
 void GraphCumulator::process_graph_message(
   const rosgraph_monitor_msgs::msg::Graph::SharedPtr graph_msg)
 {
   if (!graph_msg) {
-    RCLCPP_WARN(
-      get_logger(),
-      "Received null graph message, skipping processing");
+    RCLCPP_WARN(get_logger(), "Received null graph message, skipping processing");
     return;
   }
 
@@ -169,15 +160,9 @@ void GraphCumulator::clear()
   last_update_time_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
 }
 
-size_t GraphCumulator::get_node_count() const
-{
-  return node_history_.size();
-}
+size_t GraphCumulator::get_node_count() const { return node_history_.size(); }
 
-rclcpp::Time GraphCumulator::get_last_update_time() const
-{
-  return last_update_time_;
-}
+rclcpp::Time GraphCumulator::get_last_update_time() const { return last_update_time_; }
 
 void GraphCumulator::update_from_graph_message(
   const rosgraph_monitor_msgs::msg::Graph & current_graph_msg)
@@ -189,15 +174,11 @@ void GraphCumulator::update_from_graph_message(
       node_history_.emplace(
         node_msg.name,
         CumulativeNodeInfo{
-          node_msg.name,
-          std::vector<CumulativeTopicEndpoint>(),
-          std::vector<CumulativeTopicEndpoint>(),
-          std::vector<CumulativeServiceEndpoint>(),
-          std::vector<CumulativeServiceEndpoint>(),
+          node_msg.name, std::vector<CumulativeTopicEndpoint>(),
+          std::vector<CumulativeTopicEndpoint>(), std::vector<CumulativeServiceEndpoint>(),
+          std::vector<CumulativeServiceEndpoint>(), std::vector<CumulativeActionEndpoint>(),
           std::vector<CumulativeActionEndpoint>(),
-          std::vector<CumulativeActionEndpoint>(),
-          std::vector<rcl_interfaces::msg::ParameterDescriptor>(),
-          current_graph_msg.timestamp});
+          std::vector<rcl_interfaces::msg::ParameterDescriptor>(), current_graph_msg.timestamp});
     }
 
     // Update the last seen time for this node
@@ -239,15 +220,13 @@ void GraphCumulator::update_from_graph_message(
 }
 
 void GraphCumulator::add_publisher_to_history(
-  const std::string & node_name,
-  const rosgraph_monitor_msgs::msg::Topic & topic)
+  const std::string & node_name, const rosgraph_monitor_msgs::msg::Topic & topic)
 {
   // Ensure node exists in history
   auto node_it = node_history_.find(node_name);
   if (node_it == node_history_.end()) {
     RCLCPP_WARN(
-      get_logger(),
-      "Attempted to add publisher to non-existent node: %s", node_name.c_str());
+      get_logger(), "Attempted to add publisher to non-existent node: %s", node_name.c_str());
     return;
   }
 
@@ -261,15 +240,13 @@ void GraphCumulator::add_publisher_to_history(
 }
 
 void GraphCumulator::add_subscription_to_history(
-  const std::string & node_name,
-  const rosgraph_monitor_msgs::msg::Topic & topic)
+  const std::string & node_name, const rosgraph_monitor_msgs::msg::Topic & topic)
 {
   // Ensure node exists in history
   auto node_it = node_history_.find(node_name);
   if (node_it == node_history_.end()) {
     RCLCPP_WARN(
-      get_logger(),
-      "Attempted to add subscription to non-existent node: %s", node_name.c_str());
+      get_logger(), "Attempted to add subscription to non-existent node: %s", node_name.c_str());
     return;
   }
 
@@ -283,15 +260,13 @@ void GraphCumulator::add_subscription_to_history(
 }
 
 void GraphCumulator::add_service_to_history(
-  const std::string & node_name,
-  const rosgraph_monitor_msgs::msg::Service & service)
+  const std::string & node_name, const rosgraph_monitor_msgs::msg::Service & service)
 {
   // Ensure node exists in history
   auto node_it = node_history_.find(node_name);
   if (node_it == node_history_.end()) {
     RCLCPP_WARN(
-      get_logger(),
-      "Attempted to add service to non-existent node: %s", node_name.c_str());
+      get_logger(), "Attempted to add service to non-existent node: %s", node_name.c_str());
     return;
   }
 
@@ -305,15 +280,13 @@ void GraphCumulator::add_service_to_history(
 }
 
 void GraphCumulator::add_client_to_history(
-  const std::string & node_name,
-  const rosgraph_monitor_msgs::msg::Service & client)
+  const std::string & node_name, const rosgraph_monitor_msgs::msg::Service & client)
 {
   // Ensure node exists in history
   auto node_it = node_history_.find(node_name);
   if (node_it == node_history_.end()) {
     RCLCPP_WARN(
-      get_logger(),
-      "Attempted to add client to non-existent node: %s", node_name.c_str());
+      get_logger(), "Attempted to add client to non-existent node: %s", node_name.c_str());
     return;
   }
 
@@ -327,15 +300,13 @@ void GraphCumulator::add_client_to_history(
 }
 
 void GraphCumulator::add_action_server_to_history(
-  const std::string & node_name,
-  const rosgraph_monitor_msgs::msg::Action & action)
+  const std::string & node_name, const rosgraph_monitor_msgs::msg::Action & action)
 {
   // Ensure node exists in history
   auto node_it = node_history_.find(node_name);
   if (node_it == node_history_.end()) {
     RCLCPP_WARN(
-      get_logger(),
-      "Attempted to add action server to non-existent node: %s", node_name.c_str());
+      get_logger(), "Attempted to add action server to non-existent node: %s", node_name.c_str());
     return;
   }
 
@@ -349,15 +320,13 @@ void GraphCumulator::add_action_server_to_history(
 }
 
 void GraphCumulator::add_action_client_to_history(
-  const std::string & node_name,
-  const rosgraph_monitor_msgs::msg::Action & action)
+  const std::string & node_name, const rosgraph_monitor_msgs::msg::Action & action)
 {
   // Ensure node exists in history
   auto node_it = node_history_.find(node_name);
   if (node_it == node_history_.end()) {
     RCLCPP_WARN(
-      get_logger(),
-      "Attempted to add action client to non-existent node: %s", node_name.c_str());
+      get_logger(), "Attempted to add action client to non-existent node: %s", node_name.c_str());
     return;
   }
 
@@ -381,8 +350,7 @@ void GraphCumulator::update_node_parameters(
   }
 }
 
-std::vector<CumulativeTopicEndpoint>::const_iterator
-GraphCumulator::find_topic_endpoint(
+std::vector<CumulativeTopicEndpoint>::const_iterator GraphCumulator::find_topic_endpoint(
   const std::vector<CumulativeTopicEndpoint> & endpoints,
   const CumulativeTopicEndpoint & endpoint) const
 {
@@ -394,8 +362,7 @@ GraphCumulator::find_topic_endpoint(
     });
 }
 
-std::vector<CumulativeServiceEndpoint>::const_iterator
-GraphCumulator::find_service_endpoint(
+std::vector<CumulativeServiceEndpoint>::const_iterator GraphCumulator::find_service_endpoint(
   const std::vector<CumulativeServiceEndpoint> & endpoints,
   const CumulativeServiceEndpoint & endpoint) const
 {
@@ -407,8 +374,7 @@ GraphCumulator::find_service_endpoint(
     });
 }
 
-std::vector<CumulativeActionEndpoint>::const_iterator
-GraphCumulator::find_action_endpoint(
+std::vector<CumulativeActionEndpoint>::const_iterator GraphCumulator::find_action_endpoint(
   const std::vector<CumulativeActionEndpoint> & endpoints,
   const CumulativeActionEndpoint & endpoint) const
 {
@@ -420,8 +386,7 @@ GraphCumulator::find_action_endpoint(
 }
 
 void GraphCumulator::upsert_topic_endpoint(
-  std::vector<CumulativeTopicEndpoint> & endpoints,
-  const CumulativeTopicEndpoint & endpoint)
+  std::vector<CumulativeTopicEndpoint> & endpoints, const CumulativeTopicEndpoint & endpoint)
 {
   auto it = find_topic_endpoint(endpoints, endpoint);
 
@@ -435,8 +400,7 @@ void GraphCumulator::upsert_topic_endpoint(
 }
 
 void GraphCumulator::add_unique_service_endpoint(
-  std::vector<CumulativeServiceEndpoint> & endpoints,
-  const CumulativeServiceEndpoint & endpoint)
+  std::vector<CumulativeServiceEndpoint> & endpoints, const CumulativeServiceEndpoint & endpoint)
 {
   auto it = find_service_endpoint(endpoints, endpoint);
 
@@ -448,8 +412,7 @@ void GraphCumulator::add_unique_service_endpoint(
 }
 
 void GraphCumulator::add_unique_action_endpoint(
-  std::vector<CumulativeActionEndpoint> & endpoints,
-  const CumulativeActionEndpoint & endpoint)
+  std::vector<CumulativeActionEndpoint> & endpoints, const CumulativeActionEndpoint & endpoint)
 {
   auto it = find_action_endpoint(endpoints, endpoint);
 

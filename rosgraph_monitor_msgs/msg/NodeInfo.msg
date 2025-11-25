@@ -10,16 +10,6 @@ Service[] clients
 Action[] action_servers
 Action[] action_clients
 
-Service[] services
-Service[] clients
-
-Action[] action_servers
-Action[] action_clients
-
-# TODO:
-# - Services
-# - Actions
-
 # Observed parameter descriptions this node
 rcl_interfaces/ParameterDescriptor[] parameters
 
