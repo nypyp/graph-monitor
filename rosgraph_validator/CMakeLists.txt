@@ -32,7 +32,7 @@ generate_parameter_library(${PROJECT_NAME}_parameters
                            param/validator_parameters.yaml)
 
 ament_auto_add_library(${PROJECT_NAME}_nodelib SHARED src/validator.cpp)
-target_link_libraries(${PROJECT_NAME}_nodelib validator_parameters
+target_link_libraries(${PROJECT_NAME}_nodelib ${PROJECT_NAME}_parameters
                       yaml-cpp::yaml-cpp fmt::fmt)
 
 rclcpp_components_register_node(
@@ -44,4 +44,4 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_auto_package(INSTALL_TO_SHARE launch config USE_SCOPED_HEADER_INSTALL_DIR)
+ament_auto_package(INSTALL_TO_SHARE USE_SCOPED_HEADER_INSTALL_DIR)

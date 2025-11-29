@@ -1,4 +1,4 @@
-validator_parameters:
+rosgraph_validator_parameters:
   config_file:
     type: string
     description: The path to the configuration file.

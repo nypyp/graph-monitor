@@ -49,8 +49,8 @@ GraphValidator::GraphValidator(const rclcpp::NodeOptions & options)
 {
   RCLCPP_INFO(get_logger(), "Validator initialized");
   try {
-    param_listener_ =
-      std::make_shared<validator_parameters::ParamListener>(this->get_node_parameters_interface());
+    param_listener_ = std::make_shared<rosgraph_validator_parameters::ParamListener>(
+      this->get_node_parameters_interface());
     params_ = param_listener_->get_params();
 
     load_config(params_.config_file);

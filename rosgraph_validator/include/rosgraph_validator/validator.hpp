@@ -18,7 +18,7 @@
 #include <diagnostic_updater/diagnostic_status_wrapper.hpp>
 #include <diagnostic_updater/diagnostic_updater.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <rosgraph_monitor/validator_parameters.hpp>
+#include <rosgraph_validator/rosgraph_validator_parameters.hpp>
 #include <unordered_map>
 
 #include "rosgraph_monitor_msgs/msg/graph.hpp"
@@ -71,8 +71,8 @@ public:
 private:
   using DiagStatus = diagnostic_msgs::msg::DiagnosticStatus;
 
-  std::shared_ptr<validator_parameters::ParamListener> param_listener_;
-  validator_parameters::Params params_;
+  std::shared_ptr<rosgraph_validator_parameters::ParamListener> param_listener_;
+  rosgraph_validator_parameters::Params params_;
 
   void on_graph(const rosgraph_monitor_msgs::msg::Graph::SharedPtr msg);
   void validate_nodes(diagnostic_updater::DiagnosticStatusWrapper & status);
