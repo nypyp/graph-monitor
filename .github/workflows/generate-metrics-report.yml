@@ -1,0 +1,60 @@
+name: Generate metrics report
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  action-test:
+    runs-on: ubuntu-22.04
+    env:
+      ARTIFACTS_DIR: data
+      BASE_URL: "https://nypyp.github.io/graph-monitor/"
+      TITLE: "graph-monitor"
+      ROS_DISTRO: jazzy
+      VCS_FILE: ""  # Set vcs repo file if you need
+
+    steps:
+    - name: Clone default branch
+      uses: actions/checkout@v2
+
+    - name: Clone data branch in this repo
+      uses: actions/checkout@v2
+      with:
+        ref: data
+        path: ${{ env.ARTIFACTS_DIR }}
+
+    - uses: ros-tooling/setup-ros@v0.2
+      with:
+        required-ros-distributions: ${{ matrix.ros_distribution }}
+
+    - name: Build
+      run: |
+        . /opt/ros/${{ matrix.ros_distribution }}/setup.sh
+        colcon build --event-handlers console_cohesion+ \
+          --cmake-args -DCMAKE_CXX_FLAGS="-fprofile-arcs -ftest-coverage -DCOVERAGE_RUN=1" -DCMAKE_C_FLAGS="-fprofile-arcs -ftest-coverage -DCOVERAGE_RUN=1" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+    - id: metrics-reporter
+      uses: tier4/ros-metrics-reporter@v0.3
+      with:
+        artifacts-dir: ${{ env.ARTIFACTS_DIR }}
+        base-url: ${{ env.BASE_URL }}
+        title: ${{ env.TITLE }}
+        ros-distro: ${{ env.ROS_DISTRO }}
+
+    - name: Push artifacts
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ${{ env.ARTIFACTS_DIR }}
+        publish_branch: data
+
+    - name: Deploy public to gh-pages (main branch only)
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: public
