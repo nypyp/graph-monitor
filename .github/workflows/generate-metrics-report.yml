@@ -9,12 +9,14 @@ on:
 jobs:
   action-test:
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        ros_distribution: [jazzy]
     env:
       ARTIFACTS_DIR: data
       BASE_URL: "https://nypyp.github.io/graph-monitor/"
       TITLE: "graph-monitor"
       ROS_DISTRO: jazzy
-      VCS_FILE: ""  # Set vcs repo file if you need
 
     steps:
     - name: Clone default branch
